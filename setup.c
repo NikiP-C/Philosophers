@@ -6,7 +6,7 @@
 /*   By: nphilipp <nphilipp@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/09/14 18:55:56 by nphilipp      #+#    #+#                 */
-/*   Updated: 2021/09/15 18:33:47 by nphilipp      ########   odam.nl         */
+/*   Updated: 2021/09/20 14:07:11 by nphilipp      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ void	setup(t_info *info, int ac, char **av)
 
 	count = 0;
 	info->number_philo = ft_atoi(av[1]);
-	info->number_philo = ft_atoi(av[2]);
+	info->time_to_die = ft_atoi(av[2]);
 	info->time_to_eat = ft_atoi(av[3]);
 	info->time_to_sleep = ft_atoi(av[4]);
 	if (ac == 6)
@@ -64,4 +64,32 @@ int	get_time(int start_time)
 
 	gettimeofday(&time, NULL);
 	return (time.tv_usec - start_time);
+}
+
+void	get_fork(t_info	*info)
+{
+	if (info->philo % 2)
+	{
+		pthread_mutex_lock(&info->forks[info->philo]);
+		printf("%d %d has taken a fork\n", \
+		get_time(info->start_time), info->philo);
+		if (info->philo == info->number_philo - 1)
+			pthread_mutex_lock(&info->forks[0]);
+		else
+			pthread_mutex_lock(&info->forks[info->philo + 1]);
+		printf("%d %d has taken a fork\n", \
+		get_time(info->start_time), info->philo);
+	}
+	else
+	{
+		if (info->philo == info->number_philo - 1)
+			pthread_mutex_lock(&info->forks[0]);
+		else
+			pthread_mutex_lock(&info->forks[info->philo + 1]);
+		printf("%d %d has taken a fork\n", \
+		get_time(info->start_time), info->philo);
+		pthread_mutex_lock(&info->forks[info->philo]);
+		printf("%d %d has taken a fork\n", \
+		get_time(info->start_time), info->philo);
+	}
 }

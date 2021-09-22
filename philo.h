@@ -24,5 +24,6 @@ typedef struct s_info
 //SETUP.c
 void	setup(t_info *info, int ac, char **av);
 int		get_time(int start_time);
+void	get_fork(t_info	*info);
 
 #endif 
