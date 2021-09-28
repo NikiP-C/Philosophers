@@ -6,7 +6,7 @@
 /*   By: nphilipp <nphilipp@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/09/14 18:55:56 by nphilipp      #+#    #+#                 */
-/*   Updated: 2021/09/20 14:07:11 by nphilipp      ########   odam.nl         */
+/*   Updated: 2021/09/28 20:25:07 by nphilipp      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,20 +34,25 @@ static int	ft_atoi(char *str)
 	return (num * neg);
 }
 
-void	setup(t_info *info, int ac, char **av)
+t_info	*setup(int ac, char **av)
 {
 	struct timeval	time1;
 	int				count;
+	t_info			*info;
 
+	info = malloc(sizeof(t_info));
+	printf("start of setup\n");
 	count = 0;
+	info->dead = 0;
 	info->number_philo = ft_atoi(av[1]);
 	info->time_to_die = ft_atoi(av[2]);
 	info->time_to_eat = ft_atoi(av[3]);
 	info->time_to_sleep = ft_atoi(av[4]);
 	if (ac == 6)
 		info->often_to_eat = ft_atoi(av[5]);
-	gettimeofday(&time1, NULL);
-	info->start_time = time1.tv_usec;
+	else
+		info->often_to_eat = -1;
+	printf("after av\n");
 	info->forks = malloc(sizeof(pthread_mutex_t) * info->number_philo);
 	info->last_eaten = malloc(sizeof(int) * info->number_philo);
 	memset(info->last_eaten, 0, sizeof(int) * info->number_philo);
@@ -56,6 +61,11 @@ void	setup(t_info *info, int ac, char **av)
 		pthread_mutex_init(&info->forks[count], NULL);
 		count++;
 	}
+	pthread_mutex_init(&info->print, NULL);
+	gettimeofday(&time1, NULL);
+	info->start_time = time1.tv_usec;
+	printf("end of setup\n");
+	return(info);
 }
 
 int	get_time(int start_time)
@@ -66,30 +76,26 @@ int	get_time(int start_time)
 	return (time.tv_usec - start_time);
 }
 
-void	get_fork(t_info	*info)
+void	get_fork(t_philo *philo)
 {
-	if (info->philo % 2)
+	if (philo->num % 2)
 	{
-		pthread_mutex_lock(&info->forks[info->philo]);
-		printf("%d %d has taken a fork\n", \
-		get_time(info->start_time), info->philo);
-		if (info->philo == info->number_philo - 1)
-			pthread_mutex_lock(&info->forks[0]);
+		pthread_mutex_lock(&philo->info->forks[philo->num]);
+		print_philo(philo, FORK);
+		if (philo->num == philo->info->number_philo - 1)
+			pthread_mutex_lock(&philo->info->forks[0]);
 		else
-			pthread_mutex_lock(&info->forks[info->philo + 1]);
-		printf("%d %d has taken a fork\n", \
-		get_time(info->start_time), info->philo);
+			pthread_mutex_lock(&philo->info->forks[philo->num + 1]);
+		print_philo(philo, FORK);
 	}
 	else
 	{
-		if (info->philo == info->number_philo - 1)
-			pthread_mutex_lock(&info->forks[0]);
+		if (philo->num == philo->info->number_philo - 1)
+			pthread_mutex_lock(&philo->info->forks[0]);
 		else
-			pthread_mutex_lock(&info->forks[info->philo + 1]);
-		printf("%d %d has taken a fork\n", \
-		get_time(info->start_time), info->philo);
-		pthread_mutex_lock(&info->forks[info->philo]);
-		printf("%d %d has taken a fork\n", \
-		get_time(info->start_time), info->philo);
+			pthread_mutex_lock(&philo->info->forks[philo->num + 1]);
+		print_philo(philo, FORK);
+		pthread_mutex_lock(&philo->info->forks[philo->num]);
+		print_philo(philo, FORK);
 	}
 }

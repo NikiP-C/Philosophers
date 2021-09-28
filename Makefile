@@ -1,7 +1,7 @@
 NAME = Philo
-SRCS = Philo.c setup.c
+SRCS = src/Philo.c src/setup.c src/print.c
 
-FLAGS = -pthread 
+FLAGS = -pthread -Wall -Werror -Wextra -fsanitize=address
 
 all: $(NAME)
 
