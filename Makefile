@@ -1,7 +1,7 @@
 NAME = Philo
-SRCS = src/Philo.c src/setup.c src/print.c
+SRCS = src/Philo.c src/setup.c src/print.c src/keep_alive.c
 
-FLAGS = -pthread -Wall -Werror -Wextra 
+FLAGS = -pthread -Wall -Werror -Wextra
 
 all: $(NAME)
 

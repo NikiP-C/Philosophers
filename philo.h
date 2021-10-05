@@ -18,7 +18,8 @@ typedef struct s_info
 	int				time_to_eat;
 	int				time_to_sleep;
 	int				often_to_eat;
-	int				*last_eaten;
+	long long		*last_eaten;
+	int				*times_eaten;
 	int				dead;
 	pthread_mutex_t	*forks;
 	pthread_mutex_t	print;
@@ -26,9 +27,9 @@ typedef struct s_info
 
 typedef struct s_philo
 {
-	t_info	*info;
-	int		num;
-	int		times_eaten;
+	t_info		*info;
+	int			num;
+	long long	sleep_time;
 }				t_philo;
 
 //SETUP.c
@@ -36,5 +37,9 @@ t_info			*setup(int ac, char **av);
 long long		get_time(struct timeval start_time);
 void			get_fork(t_philo *philo);
 void			print_philo(t_philo *philo, int message);
+void			check_times_eat(t_philo	*philo);
+void			*keep_alive(void *v_info);
+int				print_malloc_fail(int free, t_info *info, \
+				pthread_t *threads, int count);
 
 #endif 

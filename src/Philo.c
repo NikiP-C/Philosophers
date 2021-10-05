@@ -6,32 +6,44 @@
 /*   By: nphilipp <nphilipp@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/09/14 18:46:49 by nphilipp      #+#    #+#                 */
-/*   Updated: 2021/09/29 20:42:25 by nphilipp      ########   odam.nl         */
+/*   Updated: 2021/10/04 15:36:02 by nphilipp      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <philo.h>
+#include "../philo.h"
 
-void	*eat_sleep_think(void *v_philo)
+void	sleep_eat(t_philo *philo)
 {
-	t_philo *philo;
-
-	philo = (t_philo *)v_philo;
-	get_fork(philo);
-	philo->times_eaten++;
-	print_philo(philo, EAT);
-	usleep(philo->info->time_to_eat);
-	pthread_mutex_unlock(&philo->info->forks[philo->num - 1]);
-	if (philo->num == philo->info->number_philo)
+	while (philo->info->last_eaten[philo->num] + \
+	philo->info->time_to_eat > get_time(philo->info->start_time))
+		usleep(100);
+	pthread_mutex_unlock(&philo->info->forks[philo->num]);
+	if (philo->num + 1 == philo->info->number_philo)
 		pthread_mutex_unlock(&philo->info->forks[0]);
 	else
-		pthread_mutex_unlock(&philo->info->forks[philo->num]);
+		pthread_mutex_unlock(&philo->info->forks[philo->num + 1]);
 	print_philo(philo, SLEEP);
-	usleep(philo->info->time_to_sleep);
+	while (philo->info->time_to_sleep + philo->sleep_time \
+	> get_time(philo->info->start_time))
+		usleep(100);
+}
+
+void	*start_thread(void *v_philo)
+{
+	t_philo	*philo;
+
+	philo = (t_philo *)v_philo;
+	if (philo->num % 2 == 1 && philo->info->times_eaten[philo->num] == 0)
+		usleep(2000);
+	check_times_eat(philo);
+	get_fork(philo);
+	philo->info->times_eaten[philo->num]++;
+	print_philo(philo, EAT);
+	sleep_eat(philo);
 	print_philo(philo, THINK);
-	if (philo->times_eaten == philo->info->often_to_eat)
+	if (philo->info->times_eaten[philo->num] == philo->info->often_to_eat)
 		return (0);
-	eat_sleep_think(philo);
+	start_thread(philo);
 	return (0);
 }
 
@@ -40,35 +52,11 @@ void	*thread_info(t_info *info, int philo_num)
 	t_philo	*philo;
 
 	philo = malloc(sizeof(t_philo));
+	if (philo == NULL)
+		return (NULL);
 	philo->info = info;
-	philo->num = philo_num + 1;
-	philo->times_eaten = 0;
+	philo->num = philo_num;
 	return (philo);
-}
-
-void	*keep_alive(void *v_info)
-{
-	t_info	*info;
-	int		count;
-
-	info = (t_info *)v_info;
-	count = 0;
-	while (count < info->number_philo)
-	{
-		if ((get_time(info->start_time) - info->last_eaten[count] \
-		>= info->time_to_die))
-		{
-			pthread_mutex_lock(&info->print);
-			printf("%lld %d died\n", get_time(info->start_time), count + 1);
-			info->dead = 1;
-			count = info->number_philo + 1;
-			pthread_mutex_unlock(&info->print);
-		}
-		count++;
-		if (count == info->number_philo)
-			count = 0;
-	}
-	exit(0);
 }
 
 int	make_threads(t_info *info)
@@ -76,14 +64,20 @@ int	make_threads(t_info *info)
 	int			count;
 	pthread_t	*threads;
 	pthread_t	checker;
+	void		**philo_thread;
 
 	count = 0;
 	threads = malloc(sizeof(pthread_t *) * info->number_philo);
+	if (threads == NULL)
+		return (print_malloc_fail(0, info, NULL));
 	pthread_create(&checker, NULL, keep_alive, info);
 	while (count < info->number_philo)
 	{
-		pthread_create(&threads[count], NULL, &eat_sleep_think, \
-			thread_info(info, count));
+		philo_thread[count] = thread_info(info, count);
+		if (philo_thread == NULL)
+			return (print_malloc_fail(void));
+		pthread_create(&threads[count], NULL, &start_thread, \
+			philo_thread[count]);
 		count++;
 	}
 	count = 0;

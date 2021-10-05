@@ -6,7 +6,7 @@
 /*   By: nphilipp <nphilipp@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2021/09/14 18:55:56 by nphilipp      #+#    #+#                 */
-/*   Updated: 2021/09/29 20:41:16 by nphilipp      ########   odam.nl         */
+/*   Updated: 2021/10/01 15:18:22 by nphilipp      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,6 @@ t_info	*setup(int ac, char **av)
 	t_info			*info;
 
 	info = malloc(sizeof(t_info));
-	count = 0;
 	info->dead = 0;
 	info->number_philo = ft_atoi(av[1]);
 	info->time_to_die = ft_atoi(av[2]);
@@ -51,8 +50,11 @@ t_info	*setup(int ac, char **av)
 	else
 		info->often_to_eat = -1;
 	info->forks = malloc(sizeof(pthread_mutex_t) * info->number_philo);
-	info->last_eaten = malloc(sizeof(int) * info->number_philo);
-	memset(info->last_eaten, 0, sizeof(int) * info->number_philo);
+	info->last_eaten = malloc(sizeof(long long) * info->number_philo);
+	memset(info->last_eaten, 0, sizeof(long long) * info->number_philo);
+	info->times_eaten = malloc(sizeof(int) * info->number_philo);
+	memset(info->times_eaten, 0, sizeof(int) * info->number_philo);
+	count = 0;
 	while (count < info->number_philo)
 	{
 		pthread_mutex_init(&info->forks[count], NULL);
@@ -69,8 +71,8 @@ long long	get_time(struct timeval	start_time)
 	long long		time_past;
 
 	gettimeofday(&time, NULL);
-	time_past = ((time.tv_sec - start_time.tv_sec) * 1000000) \
-			+ time.tv_usec - start_time.tv_usec;
+	time_past = ((time.tv_sec - start_time.tv_sec) * 1000) \
+			+ ((time.tv_usec - start_time.tv_usec) / 1000);
 	return (time_past);
 }
 
@@ -78,22 +80,22 @@ void	get_fork(t_philo *philo)
 {
 	if (philo->num % 2)
 	{
-		pthread_mutex_lock(&philo->info->forks[philo->num - 1]);
+		pthread_mutex_lock(&philo->info->forks[philo->num]);
 		print_philo(philo, FORK);
-		if (philo->num == philo->info->number_philo)
+		if (philo->num + 1 == philo->info->number_philo)
 			pthread_mutex_lock(&philo->info->forks[0]);
 		else
-			pthread_mutex_lock(&philo->info->forks[philo->num]);
+			pthread_mutex_lock(&philo->info->forks[philo->num + 1]);
 		print_philo(philo, FORK);
 	}
 	else
 	{
-		if (philo->num == philo->info->number_philo)
+		if (philo->num + 1 == philo->info->number_philo)
 			pthread_mutex_lock(&philo->info->forks[0]);
 		else
-			pthread_mutex_lock(&philo->info->forks[philo->num]);
+			pthread_mutex_lock(&philo->info->forks[philo->num + 1]);
 		print_philo(philo, FORK);
-		pthread_mutex_lock(&philo->info->forks[philo->num - 1]);
+		pthread_mutex_lock(&philo->info->forks[philo->num]);
 		print_philo(philo, FORK);
 	}
 }
